@@ -196,12 +196,14 @@
         });
 
         function notify(title, body) {
-            if (window.Notification &&  Notification.permission === 'granted') {
-                const options = {
-                    body: body,
-                };
-                new Notification(title, options);
-            }
+            try {
+                if (window.Notification &&  Notification.permission === 'granted') {
+                    const options = {
+                        body: body,
+                    };
+                    new Notification(title, options);
+                }
+            } catch (e) {}
         }
     </script>
     <script>
@@ -287,7 +289,7 @@
             // Thêm tên và nội dung tin nhắn vào messageElement
             if (!isMine) {
                 messageElement.appendChild(senderElement);
-            } else {
+                
                 // Đẩy thông báo khi có tin nhắn mới
                 // Bỏ qua những tin nhắn cũ được tải khi mở app lần đầu
                 if (new Date().getTime() - appStartTime > 3000){
