@@ -196,7 +196,7 @@
         });
 
         function notify(title, body) {
-            if (Notification.permission === 'granted') {
+            if (window.Notification &&  Notification.permission === 'granted') {
                 const options = {
                     body: body,
                 };
