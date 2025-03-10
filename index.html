@@ -334,12 +334,14 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                     const currentDisplay = window.getComputedStyle(jacoKeyboard).display;
                     const keyboardBox = jacoKeyboard.getBoundingClientRect();
+                    const inputBarBox = inputBar.getBoundingClientRect();
+                    
                     if (currentDisplay === 'none') {
                         inputBar.style.bottom = '0';
                         chatDiv.style.height = '100vh';
                     } else {
                         inputBar.style.bottom = keyboardBox.height + 'px';
-                        chatDiv.style.height = `calc(100vh - ${keyboardBox.height}px)`;
+                        chatDiv.style.height = `calc(100vh - ${inputBarBox.height + keyboardBox.height}px)`;
                     }
                 }
             }
