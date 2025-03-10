@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta apple-mobile-web-app-capable="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jaco Chat</title>
+    <!-- Thêm Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- Bạn có thể thêm font Roboto từ Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        /* Cài đặt font chữ Houf */
+        @font-face {
+            font-family: "HoufRegularScript";
+            src: url("https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf/HoufRegularScript-Light.ttf");
+            unicode-range: U+3040-309F, U+4E00-9FFF, U+30A0-30FF, U+FF00-FFEF, U+1B000-1B0FF, U+3040-F5700;
+        }
+
+
+        /* Cài đặt cơ bản */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Giao diện đăng nhập */
+        #login {
+            text-align: center;
+            margin-top: 120px;
+        }
+
+        #login button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Container chat chính */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header giống Messenger */
+        .header {
+            background-color: #0084ff;
+            color: white;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        /* Khu vực hiển thị tin nhắn */
+        .messages {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding: 70px 10px 70px;
+            /* thêm khoảng trống cho header và input */
+        }
+
+        /* Kiểu tin nhắn */
+        .message {
+            max-width: 70%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 15px;
+            position: relative;
+            word-wrap: break-word;
+            font-family: 'HoufRegularScript', 'Roboto', sans-serif;
+        }
+
+        /* Tên người gửi */
+        .sender-name {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 3px;
+        }
+
+        /* Nội dung tin nhắn */
+        .message-text {
+            font-size: 16px;
+        }
+
+        /* Tin nhắn do người dùng gửi */
+        .outgoing {
+            background-color: #0084ff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+
+        /* Tin nhắn nhận được */
+        .incoming {
+            background-color: #e4e6eb;
+            color: black;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Khu vực nhập tin nhắn */
+        .input-bar {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-bar input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px;
+            background-color: #f0f2f5;
+            font-size: 16px;
+            outline: none;
+            margin-right: 10px;
+        }
+
+        .input-bar button {
+            padding: 10px 20px;
+            background-color: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Nút đăng xuất đặt bên góc phải dưới header */
+        #logout {
+            position: fixed;
+            top: 15px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1001;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Giao diện đăng nhập -->
+    <div id="login">
+        <h2>Đăng nhập</h2>
+        <button id="googleLogin">Đăng nhập bằng Google</button>
+    </div>
+
+    <!-- Giao diện chat -->
+    <div id="chat" class="chat-container" style="display:none;">
+        <div class="header">Jaco Chat</div>
+        <div class="messages" id="messages"></div>
+        <div class="input-bar">
+            <input type="text" id="messageInput" placeholder="Nhập tin nhắn..." />
+            <button id="sendButton">Gửi</button>
+        </div>
+        <button id="logout">Đăng xuất</button>
+    </div>
+
+    <script src="https://hajaulee.github.io/jaco/experience/keyboard.js"></script>
+    <script>
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+            } else {
+                console.log('Notification permission denied.');
+            }
+        });
+
+        function notify(title, body) {
+            if (Notification.permission === 'granted') {
+                const options = {
+                    body: body,
+                };
+                new Notification(title, options);
+            }
+        }
+    </script>
+    <script>
+        // Cấu hình Firebase - thay thế YOUR_... bằng thông tin dự án Firebase của bạn
+        var firebaseConfig = {
+            apiKey: "AIzaSyCPTMJfD74iDB0-IIOmS3zrg0D3bGyYAmI",
+            authDomain: "hajau-chat-2323.firebaseapp.com",
+            databaseURL: "https://hajau-chat-2323.firebaseio.com",
+            projectId: "hajau-chat-2323",
+            storageBucket: "hajau-chat-2323.appspot.com",
+            messagingSenderId: "495790032633",
+            appId: "1:495790032633:web:31c55187112f54c1"
+        };
+        // Khởi tạo Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        const loginDiv = document.getElementById("login");
+        const chatDiv = document.getElementById("chat");
+        const googleLoginButton = document.getElementById("googleLogin");
+        const logoutButton = document.getElementById("logout");
+        const messagesDiv = document.getElementById("messages");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+        const inputBar = document.querySelector(".input-bar");
+        const jacoKeyboard = document.querySelector('.keyboard-container');
+        const appStartTime = new Date().getTime();
+
+        // Đăng nhập bằng Google
+        googleLoginButton.addEventListener("click", function () {
+            var provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    loginDiv.style.display = "none";
+                    chatDiv.style.display = "flex";
+                })
+                .catch((error) => {
+                    console.error("Lỗi đăng nhập:", error);
+                });
+        });
+
+        // Đăng xuất
+        logoutButton.addEventListener("click", function () {
+            auth.signOut().then(() => {
+                loginDiv.style.display = "block";
+                chatDiv.style.display = "none";
+            });
+        });
+
+        // Lắng nghe thay đổi trạng thái đăng nhập
+        auth.onAuthStateChanged(function (user) {
+            if (user) {
+                loginDiv.style.display = "none";
+                chatDiv.style.display = "flex";
+            } else {
+                loginDiv.style.display = "block";
+                chatDiv.style.display = "none";
+            }
+        });
+
+        // Lắng nghe tin nhắn mới từ Realtime Database
+        const messagesRef = database.ref("messages");
+        messagesRef.on("child_added", function (snapshot) {
+            var message = snapshot.val();
+            var messageElement = document.createElement("div");
+            // Nếu tin nhắn do người dùng hiện tại gửi thì áp dụng kiểu outgoing, ngược lại là incoming
+
+            const isMine = auth.currentUser && auth.currentUser.displayName === message.user;
+            messageElement.className = `message ${isMine ? "outgoing" : "incoming"}`;
+
+            // Tạo phần hiển thị tên người gửi
+            var senderElement = document.createElement("div");
+            senderElement.className = "sender-name";
+            senderElement.textContent = message.user;
+
+            // Tạo phần hiển thị nội dung tin nhắn
+            var textElement = document.createElement("div");
+            textElement.className = "message-text";
+            textElement.textContent = message.text;
+
+            // Thêm tên và nội dung tin nhắn vào messageElement
+            if (!isMine) {
+                messageElement.appendChild(senderElement);
+            } else {
+                // Đẩy thông báo khi có tin nhắn mới
+                // Bỏ qua những tin nhắn cũ được tải khi mở app lần đầu
+                if (new Date().getTime() - appStartTime > 3000){
+                    notify(message.user, message.text);
+                }
+            }
+            messageElement.appendChild(textElement);
+
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        });
+
+        // Gửi tin nhắn
+        sendButton.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var text = messageInput.value;
+            if (text.trim() !== "") {
+                var user = auth.currentUser.displayName;
+                messagesRef.push({
+                    user: user,
+                    text: text,
+                    timestamp: Date.now()
+                });
+                messageInput.value = "";
+            }
+        });
+
+        // Cho phép gửi tin nhắn bằng phím Enter
+        messageInput.addEventListener("keyup", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                sendButton.click();
+            }
+        });
+
+        // Ẩn bàn phím khi khởi tạo
+        jacoKeyboard.style.display = 'none';
+        // Kiểm tra bàn phím ảo
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    const currentDisplay = window.getComputedStyle(jacoKeyboard).display;
+                    const keyboardBox = jacoKeyboard.getBoundingClientRect();
+                    if (currentDisplay === 'none') {
+                        inputBar.style.bottom = '0';
+                        chatDiv.style.height = '100vh';
+                    } else {
+                        inputBar.style.bottom = keyboardBox.height + 'px';
+                        chatDiv.style.height = `calc(100vh - ${keyboardBox.height}px)`;
+                    }
+                }
+            }
+        });
+        observer.observe(jacoKeyboard, { attributes: true, attributeFilter: ['style'] });
+    </script>
+</body>
+
+</html>
