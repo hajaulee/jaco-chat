@@ -257,8 +257,13 @@
 <body>
 
     <!-- Hiển thị loading -->
-    <div id="loading" >
-        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+    <div id="loading">
+        <div class="lds-ellipsis">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
     </div>
 
     <!-- Giao diện đăng nhập -->
@@ -290,13 +295,13 @@
 
         function notify(title, body) {
             try {
-                if (window.Notification &&  Notification.permission === 'granted') {
+                if (window.Notification && Notification.permission === 'granted') {
                     const options = {
                         body: body,
                     };
                     new Notification(title, options);
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
     </script>
     <script>
@@ -315,6 +320,7 @@
 
         const auth = firebase.auth();
         const database = firebase.database();
+        const messagesRef = database.ref("messages");
 
         // Các phần tử trên giao diện
         const loadingDiv = document.getElementById("loading");
@@ -328,53 +334,19 @@
         const inputBar = document.querySelector(".input-bar");
         const jacoKeyboard = document.querySelector('.keyboard-container');
         const appStartTime = new Date().getTime();
-        var newSession = false;
 
-        // Đăng nhập bằng Google
-        googleLoginButton.addEventListener("click", function () {
-            var provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    loginDiv.style.display = "none";
-                    chatDiv.style.display = "flex";
-                })
-                .catch((error) => {
-                    console.error("Lỗi đăng nhập:", error);
-                });
-        });
+        const messageLimit = 10;
+        const existingKeys = {};
+        let lastMessageKey = null;
 
-        // Đăng xuất
-        logoutButton.addEventListener("click", function () {
-            auth.signOut().then(() => {
-                loginDiv.style.display = "block";
-                chatDiv.style.display = "none";
-            });
-        });
-
-        // Lắng nghe thay đổi trạng thái đăng nhập
-        auth.onAuthStateChanged(function (user) {
-            loadingDiv.style.display = "none";
-            if (user) {
-                loginDiv.style.display = "none";
-                chatDiv.style.display = "flex";
-                if (newSession){
-                    // Reload trang để cập nhật tin nhắn mới
-                    window.location.reload();
-                }
-            } else {
-                loginDiv.style.display = "block";
-                chatDiv.style.display = "none";
-                newSession = true;
+        function displayMessage(message, append = true) {
+            if (existingKeys[message.key]) {
+                return;
             }
-        });
-
-        // Lắng nghe tin nhắn mới từ Realtime Database
-        const messagesRef = database.ref("messages");
-        messagesRef.on("child_added", function (snapshot) {
-            var message = snapshot.val();
+            existingKeys[message.key] = true;
             var messageElement = document.createElement("div");
-            // Nếu tin nhắn do người dùng hiện tại gửi thì áp dụng kiểu outgoing, ngược lại là incoming
 
+            // Nếu tin nhắn do người dùng hiện tại gửi thì áp dụng kiểu outgoing, ngược lại là incoming
             const isMine = auth.currentUser && auth.currentUser.displayName === message.user;
             messageElement.className = `message ${isMine ? "outgoing" : "incoming"}`;
 
@@ -391,22 +363,98 @@
             // Thêm tên và nội dung tin nhắn vào messageElement
             if (!isMine) {
                 messageElement.appendChild(senderElement);
-                
+            }
+            messageElement.appendChild(textElement);
+
+            if (append || messagesDiv.children.length === 0) {
+                messagesDiv.appendChild(messageElement);
+            } else {
+                messagesDiv.insertBefore(messageElement, messagesDiv.firstChild);
+            }
+        }
+
+        function loadMessages(limit, end = null) {
+            let query = messagesRef.orderByKey().limitToLast(limit);
+            if (end) {
+                query = query.endBefore(end);
+            }
+
+            query.once("value", (snapshot) => {
+                const messages = [];
+                snapshot.forEach((childSnapshot) => {
+                    messages.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                });
+
+                if (messages.length > 0) {
+                    lastMessageKey = messages[0].key;
+                    const currentMessagesDivHeight = messagesDiv.scrollHeight;
+                    messages.reverse().forEach((message) => {
+                        displayMessage(message, false);
+                    });
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight - currentMessagesDivHeight - 20;
+                }
+            });
+        }
+
+        // Đăng nhập bằng Google
+        googleLoginButton.addEventListener("click", () => {
+            var provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    loginDiv.style.display = "none";
+                    chatDiv.style.display = "flex";
+                })
+                .catch((error) => {
+                    console.error("Lỗi đăng nhập:", error);
+                });
+        });
+
+        // Đăng xuất
+        logoutButton.addEventListener("click", () => {
+            auth.signOut().then(() => {
+                loginDiv.style.display = "block";
+                chatDiv.style.display = "none";
+            });
+        });
+
+        // Lắng nghe thay đổi trạng thái đăng nhập
+        auth.onAuthStateChanged((user) => {
+            loadingDiv.style.display = "none";
+            if (user) {
+                loginDiv.style.display = "none";
+                chatDiv.style.display = "flex";
+                loadMessages(messageLimit);
+            } else {
+                loginDiv.style.display = "block";
+                chatDiv.style.display = "none";
+            }
+        });
+
+        // Hiển thị thêm tin nhắn cũ khi cuộn lên trên
+        messagesDiv.addEventListener("scroll", () => {
+            if (messagesDiv.scrollTop === 0 && lastMessageKey) {
+                loadMessages(messageLimit, lastMessageKey);
+            }
+        });
+
+        // Lắng nghe tin nhắn mới từ Realtime Database
+        messagesRef.limitToLast(5).on("child_added", (snapshot) => {
+            var message = { key: snapshot.key, ...snapshot.val() };
+            displayMessage(message, true);
+            const isMine = auth.currentUser && auth.currentUser.displayName === message.user;
+            if (!isMine) {
                 // Đẩy thông báo khi có tin nhắn mới
                 // Bỏ qua những tin nhắn cũ được tải khi mở app lần đầu
                 if (new Date().getTime() - appStartTime > 3000) {
                     notify(message.user, message.text);
                 }
             }
-            messageElement.appendChild(textElement);
-
-            messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
         });
 
         // Gửi tin nhắn
-        sendButton.addEventListener("pointerdown", function (e) {
+        sendButton.addEventListener("pointerdown", (e) => {
             e.preventDefault();
             e.stopPropagation();
             var text = messageInput.value;
@@ -422,7 +470,7 @@
         });
 
         // Cho phép gửi tin nhắn bằng phím Enter
-        messageInput.addEventListener("keyup", function (event) {
+        messageInput.addEventListener("keyup", (event) => {
             if (event.key === "Enter" && !event.shiftKey) {
                 sendButton.click();
             }
