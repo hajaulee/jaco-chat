@@ -166,6 +166,7 @@
 
         /* Kiểu tin nhắn */
         .message {
+            min-width: 1em;
             max-width: 70%;
             padding: 10px;
             margin: 5px;
@@ -192,6 +193,14 @@
             background-color: #0084ff;
             color: white;
             align-self: flex-end;
+        }
+
+        .outgoing + .outgoing {
+            border-top-right-radius: 0;
+            margin-top: -3px;
+        }
+
+        .outgoing:has(+ .outgoing) {
             border-bottom-right-radius: 0;
         }
 
@@ -201,6 +210,10 @@
             color: black;
             align-self: flex-start;
             border-bottom-left-radius: 0;
+        }
+
+        .incoming + .incoming {
+            border-top-left-radius: 0;
         }
 
         /* Khu vực nhập tin nhắn */
