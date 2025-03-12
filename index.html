@@ -328,6 +328,7 @@
         const inputBar = document.querySelector(".input-bar");
         const jacoKeyboard = document.querySelector('.keyboard-container');
         const appStartTime = new Date().getTime();
+        var newSession = false;
 
         // Đăng nhập bằng Google
         googleLoginButton.addEventListener("click", function () {
@@ -356,9 +357,14 @@
             if (user) {
                 loginDiv.style.display = "none";
                 chatDiv.style.display = "flex";
+                if (newSession){
+                    // Reload trang để cập nhật tin nhắn mới
+                    window.location.reload();
+                }
             } else {
                 loginDiv.style.display = "block";
                 chatDiv.style.display = "none";
+                newSession = true;
             }
         });
 
