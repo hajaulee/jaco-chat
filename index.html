@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui, maximum-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Jaco Chat</title>
     <!-- Thêm Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -223,6 +224,7 @@
             font-size: 16px;
             outline: none;
             margin-right: 10px;
+            max-width: calc(100vw - 8em);
         }
 
         .input-bar button {
@@ -287,12 +289,14 @@
         });
 
         function notify(title, body) {
-            if (Notification.permission === 'granted') {
-                const options = {
-                    body: body,
-                };
-                new Notification(title, options);
-            }
+            try {
+                if (window.Notification &&  Notification.permission === 'granted') {
+                    const options = {
+                        body: body,
+                    };
+                    new Notification(title, options);
+                }
+            } catch (e) {}
         }
     </script>
     <script>
@@ -381,7 +385,7 @@
             // Thêm tên và nội dung tin nhắn vào messageElement
             if (!isMine) {
                 messageElement.appendChild(senderElement);
-            } else {
+                
                 // Đẩy thông báo khi có tin nhắn mới
                 // Bỏ qua những tin nhắn cũ được tải khi mở app lần đầu
                 if (new Date().getTime() - appStartTime > 3000) {
@@ -396,7 +400,7 @@
         });
 
         // Gửi tin nhắn
-        sendButton.addEventListener("mousedown", function (e) {
+        sendButton.addEventListener("pointerdown", function (e) {
             e.preventDefault();
             e.stopPropagation();
             var text = messageInput.value;
@@ -426,14 +430,13 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                     const keyboardDisplay = window.getComputedStyle(jacoKeyboard).display;
                     const keyboardBox = jacoKeyboard.getBoundingClientRect();
-                    if (keyboardDisplay === 'none') {
-                        messagesDiv.scrollTop -= (parseFloat(inputBar.style.bottom || 0));
+                    if (currentDisplay === 'none') {
                         inputBar.style.bottom = '0';
                         chatDiv.style.height = '100vh';
                     } else {
                         messagesDiv.scrollTop += keyboardBox.height;
                         inputBar.style.bottom = keyboardBox.height + 'px';
-                        chatDiv.style.height = `calc(100vh - ${keyboardBox.height}px)`;
+                        chatDiv.style.height = `calc(100vh - ${inputBarBox.height + keyboardBox.height}px)`;
                     }
                 }
             }
