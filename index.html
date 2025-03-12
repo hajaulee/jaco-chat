@@ -430,7 +430,9 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                     const keyboardDisplay = window.getComputedStyle(jacoKeyboard).display;
                     const keyboardBox = jacoKeyboard.getBoundingClientRect();
-                    if (currentDisplay === 'none') {
+                    const inputBarBox = inputBar.getBoundingClientRect();
+                    if (keyboardDisplay === 'none') {
+                        messagesDiv.scrollTop -= (parseFloat(inputBar.style.bottom) || 0);
                         inputBar.style.bottom = '0';
                         chatDiv.style.height = '100vh';
                     } else {
