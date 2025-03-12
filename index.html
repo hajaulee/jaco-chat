@@ -348,8 +348,8 @@
         const jacoKeyboard = document.querySelector('.keyboard-container');
         const appStartTime = new Date().getTime();
 
-        const messageLimit = 10;
-        const existingKeys = {};
+        const messageLimit = 30;
+        let existingKeys = {};
         let lastMessageKey = null;
 
         function displayMessage(message, append = true) {
@@ -434,6 +434,9 @@
         auth.onAuthStateChanged((user) => {
             loadingDiv.style.display = "none";
             if (user) {
+                // Xóa tin nhắn cũ
+                messagesDiv.innerHTML = "";
+                existingKeys = {};
                 loginDiv.style.display = "none";
                 chatDiv.style.display = "flex";
                 loadMessages(messageLimit);
