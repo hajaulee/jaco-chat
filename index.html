@@ -506,13 +506,15 @@
                     const keyboardBox = jacoKeyboard.getBoundingClientRect();
                     const inputBarBox = inputBar.getBoundingClientRect();
                     if (keyboardDisplay === 'none') {
-                        messagesDiv.scrollTop -= (parseFloat(inputBar.style.bottom) || 0);
+                        messagesDiv.scrollTop -= parseFloat(inputBar.style.bottom) || 0;
+                        
                         inputBar.style.bottom = '0';
                         chatDiv.style.height = '100vh';
                     } else {
-                        messagesDiv.scrollTop += keyboardBox.height;
                         inputBar.style.bottom = keyboardBox.height + 'px';
                         chatDiv.style.height = `calc(100vh - ${inputBarBox.height + keyboardBox.height}px)`;
+
+                        messagesDiv.scrollTop += keyboardBox.height;
                     }
                 }
             }
