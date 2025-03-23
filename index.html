@@ -323,7 +323,7 @@
     <script>
         // Notification prompting can only be done in response to a user gesture
         if (Notification.permission === 'default') {
-            if (confirm('Cho phép thông báo để nhận tin nhắn mới?')) {
+            document.addEventListener('click', () => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === 'granted') {
                         console.log('Notification permission granted.');
@@ -331,7 +331,7 @@
                         console.log('Notification permission denied.');
                     }
                 });
-            }
+            });
         }
 
         function notify(title, body) {
