@@ -67,16 +67,29 @@ self.addEventListener('fetch', (e) => {
 
 // Push
 self.addEventListener('push', (e) => {
-	if (e.data) {
-		const payload = e.data.json();
-		const notificationTitle = payload.notification.title;
-		const notificationOptions = {
-			body: payload.notification.body,
-			icon: 'img/fav-72.png'
-		};
+	e.waitUntil(
+		clients.matchAll().then(clientList => {
+			let status = "Background Message";
+			if (clientList.length > 0) {
+				// Có ít nhất một cửa sổ hoặc tab đang mở
+				status = "Foreground Message";
+			} else {
+				// Không có cửa sổ hoặc tab nào đang mở
+			}
 
-		self.registration.showNotification(notificationTitle, notificationOptions);
-	}
+			if (e.data) {
+				const payload = e.data.json();
+				const notificationTitle = payload.notification.title + ' ' + status;
+				const notificationOptions = {
+					body: payload.notification.body,
+					icon: 'img/fav-72.png'
+				};
+		
+				self.registration.showNotification(notificationTitle, notificationOptions);
+			}
+		})
+	);
+	
 });
 
 // Check never cache urls 
