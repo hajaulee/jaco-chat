@@ -391,7 +391,6 @@
 
         const messageLimit = 30;
 
-        let loginUser = null;
         let existingKeys = {};
         let lastMessageKey = null;
         let isNewLoginSession = false;
@@ -485,10 +484,8 @@
                 }
 
                 // Lưu thông tin người dùng đăng nhập
-                loginUser = user;
                 console.log("Đăng nhập thành công:", user);
-                
-                fcmTokenRef.child(encodeQueryPath(loginUser?.email ?? 'nouser')).child(fcmCurrentToken).set(true);
+                fcmTokenRef.child(encodeQueryPath(auth.currentUser?.email ?? 'nouser')).child(fcmCurrentToken).set(true);
 
                 // Xóa tin nhắn cũ
                 messagesDiv.innerHTML = "";
@@ -537,7 +534,8 @@
                 messagesRef.push({
                     user: user,
                     text: text,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    email: auth.currentUser.email
                 });
                 messageInput.value = "";
             }
