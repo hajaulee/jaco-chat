@@ -322,14 +322,16 @@
     <script src="https://hajaulee.github.io/jaco/experience/keyboard.js"></script>
     <script>
         // Notification prompting can only be done in response to a user gesture
-        if (confirm('Cho phép thông báo để nhận tin nhắn mới?')) {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    console.log('Notification permission granted.');
-                } else {
-                    console.log('Notification permission denied.');
-                }
-            });
+        if (Notification.permission === 'default') {
+            if (confirm('Cho phép thông báo để nhận tin nhắn mới?')) {
+                Notification.requestPermission().then((permission) => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    } else {
+                        console.log('Notification permission denied.');
+                    }
+                });
+            }
         }
 
         function notify(title, body) {
