@@ -388,7 +388,7 @@
         let existingKeys = {};
         let lastMessageKey = null;
         let isNewLoginSession = false;
-        let fcmCurrentToken = null;
+        let fcmCurrentToken = 'no_token';
 
         function displayMessage(message, append = true) {
             if (existingKeys[message.key]) {
@@ -573,6 +573,7 @@
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('./sw.js')
                     .then(function (register) {
+                        register.update();
                         console.log('PWA service worker ready', register);
 
                         // Sử dụng Service Worker đã đăng ký để lấy token
@@ -590,7 +591,6 @@
                             .catch(function (error) {
                                 console.log('An error occurred while retrieving token. ', error);
                             });
-                        register.update();
                     })
                     .catch(function (error) {
                         console.log('Register failed! Error:' + error);
