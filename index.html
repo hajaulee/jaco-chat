@@ -308,7 +308,7 @@
         <div class="header">
             <div>
                 <div>Jaco Chat</div>
-                <div class="version-info">v1.0.4</div>
+                <div class="version-info">v1.0.5</div>
             </div>
         </div>
         <div class="messages" id="messages"></div>
@@ -616,6 +616,19 @@
 
             });
         }
+
+        // Check if the page is active or not, and send the status to the service worker
+        window.addEventListener('focus', () => {
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'PAGE_ACTIVE', value: true });
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'PAGE_ACTIVE', value: false });
+            }
+        });
     </script>
 </body>
 

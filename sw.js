@@ -5,6 +5,17 @@ var fontUrl = 'https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf
 var cacheUrls = [offlinePage, fontUrl];
 var neverCacheUrls = [/\/index.html/];
 
+// Mở hoặc tạo cơ sở dữ liệu
+const request = indexedDB.open('SwDatabase', 1);
+
+// Tạo object store nếu cơ sở dữ liệu chưa tồn tại
+request.onupgradeneeded = function (event) {
+	const db = event.target.result;
+	if (!db.objectStoreNames.contains('SwStore')) {
+		db.createObjectStore('SwStore');
+	}
+};
+
 // Install 
 self.addEventListener('install', (e) => {
 	console.log('PWA sw installation');
@@ -66,30 +77,25 @@ self.addEventListener('fetch', (e) => {
 });
 
 // Push
-self.addEventListener('push', (e) => {
-	e.waitUntil(
-		clients.matchAll().then(clientList => {
-			let status = "Background Message";
-			if (clientList.length > 0) {
-				// Có ít nhất một cửa sổ hoặc tab đang mở
-				status = "Foreground Message";
-			} else {
-				// Không có cửa sổ hoặc tab nào đang mở
-			}
+self.addEventListener('push', async (e) => {
+	const tabActive = await getData('PAGE_ACTIVE');
+	if (!tabActive && e.data) {
+		const payload = e.data.json();
+		const notificationTitle = payload.notification.title + ' ' + status;
+		const notificationOptions = {
+			body: payload.notification.body,
+			icon: 'img/fav-72.png'
+		};
 
-			if (e.data) {
-				const payload = e.data.json();
-				const notificationTitle = payload.notification.title + ' ' + status;
-				const notificationOptions = {
-					body: payload.notification.body,
-					icon: 'img/fav-72.png'
-				};
-		
-				self.registration.showNotification(notificationTitle, notificationOptions);
-			}
-		})
-	);
-	
+		self.registration.showNotification(notificationTitle, notificationOptions);
+	}
+});
+
+
+self.addEventListener('message', async (event) => {
+	if (event.data.type === 'PAGE_ACTIVE') {
+		saveData('PAGE_ACTIVE', event.data.value);
+	}
 });
 
 // Check never cache urls 
@@ -112,4 +118,29 @@ function checkFetchRules(e) {
 	}
 
 	return true;
+}
+
+// Lưu dữ liệu vào cơ sở dữ liệu
+function saveData(key, value) {
+	const db = request.result;
+	const transaction = db.transaction('SwStore', 'readwrite');
+	const store = transaction.objectStore('SwStore');
+	store.put(value, key);
+}
+
+// Lấy dữ liệu từ cơ sở dữ liệu
+function getData(key) {
+	const db = request.result;
+	const transaction = db.transaction('SwStore', 'readonly');
+	const store = transaction.objectStore('SwStore');
+
+	return new Promise((resolve, reject) => {
+		const getRes = store.get(key);
+		getRes.onsuccess = function () {
+			resolve(getRes.result);
+		};
+		getRes.onerror = function () {
+			reject(getRes.error);
+		};
+	})
 }
