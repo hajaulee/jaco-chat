@@ -3,18 +3,27 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="msapplication-TileColor" content="#af0a1a">
+    <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui, maximum-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="favicon.ico">
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon.ico">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="img/fav-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/fav-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/fav-16.png">
+    <link rel="apple-touch-icon" href="img/fav-57.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="img/fav-114.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="img/fav-72.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="img/fav-144.png">
+    <link rel="manifest" href="manifest.json">
     <title>Jaco Chat</title>
     <!-- Thêm Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     <!-- Bạn có thể thêm font Roboto từ Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
     <style>
@@ -158,6 +167,11 @@
             z-index: 1000;
         }
 
+        .version-info {
+            font-size: 10px;
+            text-align: center;
+        }
+
         /* Khu vực hiển thị tin nhắn */
         .messages {
             display: flex;
@@ -199,7 +213,7 @@
             align-self: flex-end;
         }
 
-        .outgoing + .outgoing {
+        .outgoing+.outgoing {
             border-top-right-radius: 0;
             margin-top: -3px;
         }
@@ -216,7 +230,7 @@
             border-bottom-left-radius: 0;
         }
 
-        .incoming + .incoming {
+        .incoming+.incoming {
             border-top-left-radius: 0;
         }
 
@@ -291,7 +305,12 @@
 
     <!-- Giao diện chat -->
     <div id="chat" class="chat-container" style="display:none;">
-        <div class="header">Jaco Chat</div>
+        <div class="header">
+            <div>
+                <div>Jaco Chat</div>
+                <div class="version-info">v1.0.1</div>
+            </div>
+        </div>
         <div class="messages" id="messages"></div>
         <div class="input-bar">
             <input type="text" id="messageInput" inputmode="none" placeholder="Nhập tin nhắn..." />
@@ -311,14 +330,23 @@
         });
 
         function notify(title, body) {
-            try {
-                if (window.Notification && Notification.permission === 'granted') {
-                    const options = {
-                        body: body,
-                    };
-                    new Notification(title, options);
-                }
-            } catch (e) { }
+            // try {
+            //     if (window.Notification && Notification.permission === 'granted') {
+            //         const options = {
+            //             body: body,
+            //         };
+            //         new Notification(title, options);
+            //     }
+            // } catch (e) { }
+        }
+    </script>
+    <script>
+        function encodeQueryPath(path) {
+            return path.replaceAll(".", "_@dot_");
+        }
+
+        function decodeQueryPath(path) {
+            return path.replaceAll("_@dot_", ".");
         }
     </script>
     <script>
@@ -337,7 +365,9 @@
 
         const auth = firebase.auth();
         const database = firebase.database();
+        const messaging = firebase.messaging();
         const messagesRef = database.ref("messages");
+        const fcmTokenRef = database.ref("fcmTokens");
 
         // Các phần tử trên giao diện
         const loadingDiv = document.getElementById("loading");
@@ -353,8 +383,12 @@
         const appStartTime = new Date().getTime();
 
         const messageLimit = 30;
+
+        let loginUser = null;
         let existingKeys = {};
         let lastMessageKey = null;
+        let isNewLoginSession = false;
+        let fcmCurrentToken = null;
 
         function displayMessage(message, append = true) {
             if (existingKeys[message.key]) {
@@ -438,6 +472,16 @@
         auth.onAuthStateChanged((user) => {
             loadingDiv.style.display = "none";
             if (user) {
+                if (isNewLoginSession) {
+                    window.location.reload();
+                }
+
+                // Lưu thông tin người dùng đăng nhập
+                loginUser = user;
+                console.log("Đăng nhập thành công:", user);
+                
+                fcmTokenRef.child(encodeQueryPath(loginUser?.email ?? 'nouser')).child(fcmCurrentToken).set(true);
+
                 // Xóa tin nhắn cũ
                 messagesDiv.innerHTML = "";
                 existingKeys = {};
@@ -447,6 +491,8 @@
             } else {
                 loginDiv.style.display = "block";
                 chatDiv.style.display = "none";
+
+                isNewLoginSession = true;
             }
         });
 
@@ -507,7 +553,7 @@
                     const inputBarBox = inputBar.getBoundingClientRect();
                     if (keyboardDisplay === 'none') {
                         messagesDiv.scrollTop -= parseFloat(inputBar.style.bottom) || 0;
-                        
+
                         inputBar.style.bottom = '0';
                         chatDiv.style.height = '100vh';
                     } else {
@@ -520,6 +566,48 @@
             }
         });
         observer.observe(jacoKeyboard, { attributes: true, attributeFilter: ['style'] });
+    </script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function (register) {
+                        console.log('PWA service worker ready', register);
+
+                        // Sử dụng Service Worker đã đăng ký để lấy token
+                        messaging.useServiceWorker(register);
+                        messaging.getToken( { vapidKey: 'BI5Nt_-CoW5VV6HdREokaE2Qyk70L1V6xtqmlM0-yvy_C_mrT_NUcHs8Gsnmt2Rtn6GPWEzzrCfuO8Cr0Y-w-ZM' })
+                            .then(function (currentToken) {
+                                if (currentToken) {
+                                    fcmCurrentToken = currentToken;
+                                    console.log('Token:', currentToken);
+                                    
+                                } else {
+                                    console.log('No registration token available. Request permission to generate one.');
+                                }
+                            })
+                            .catch(function (error) {
+                                console.log('An error occurred while retrieving token. ', error);
+                            });
+                        register.update();
+                    })
+                    .catch(function (error) {
+                        console.log('Register failed! Error:' + error);
+                    });
+
+                // Check user internet status (online/offline)
+                function updateOnlineStatus(event) {
+                    if (!navigator.onLine) {
+                        alert('Internet access is not possible!')
+                    }
+                }
+
+                window.addEventListener('online', updateOnlineStatus);
+                window.addEventListener('offline', updateOnlineStatus);
+
+            });
+        }
     </script>
 </body>
 

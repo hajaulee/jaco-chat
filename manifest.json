@@ -1,0 +1,27 @@
+{
+    "name": "Jaco chat",
+    "short_name": "Jaco chat",
+    "description": "Jaco chat is a simple chat app",
+    "icons": [
+        {
+            "src": "img/fav-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "img/fav-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "background_color": "#af0a1a",
+    "theme_color": "#af0a1a",
+    "display": "standalone",
+    "orientation": "any",
+    "start_url": ".",
+    "url": "index.html",
+    "scope": ".",
+    "lang": "vi-VN",
+    "dir": "rtl"
+}
