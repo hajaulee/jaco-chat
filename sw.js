@@ -80,6 +80,7 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', async (e) => {
 	console.log('PWA sw push event', e);
 	const tabActive = await getData('PAGE_ACTIVE');
+	
 	if (!tabActive && e.data) {
 		const payload = e.data.json();
 		const notificationTitle = payload.notification.title;
@@ -94,6 +95,8 @@ self.addEventListener('push', async (e) => {
 
 
 self.addEventListener('message', async (event) => {
+	console.log('PWA sw message event', event);
+
 	if (event.data.type === 'PAGE_ACTIVE') {
 		saveData('PAGE_ACTIVE', event.data.value);
 	}

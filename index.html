@@ -538,6 +538,43 @@
                     email: auth.currentUser.email
                 });
                 messageInput.value = "";
+
+                // Gửi thông báo đến các thiết bị khác
+                fcmTokenRef.once("value", (snapshot) => {
+
+                    let tokens = [];
+                    snapshot.forEach((childSnapshot) => {
+                        const encodedEmail = childSnapshot.key;
+                        const email = decodeQueryPath(encodedEmail);
+                        if (email !== auth.currentUser.email) {
+                            childSnapshot.forEach((tokenSnapshot) => {
+                                const token = tokenSnapshot.key;
+                                tokens.push(token);
+                            });
+                        }
+                    });
+                    // Xóa token trùng lặp
+                    tokens = [...new Set(tokens)];
+                    
+                    fetch('https://script.google.com/macros/s/AKfycbwxHMV3F4-DBUf4nb-yVmrcBiwVy5tWqs0eckxaY_9KnhwFZHs9l-3f6x7cdNunPF1TUA/exec', {
+                        method: 'POST',
+                        mode: "no-cors",
+                        referrerPolicy: "strict-origin-when-cross-origin",
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            tokens: tokens,
+                            notification: {
+                                title: "Từ: " + user,
+                                body: text,
+                                click_action: window.location.href,
+                            },
+                        }),
+                    });
+                });
             }
         });
 
