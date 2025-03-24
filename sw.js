@@ -62,18 +62,20 @@ self.addEventListener('fetch', (e) => {
 	}
 
 	// Strategy for offline user
-	e.respondWith(caches.match(e.request).then((response) => {
-		return response || fetch(e.request).then(async (response) => {
-			return caches.open(cacheStorageName).then((cache) => {
-				if (neverCacheUrls.every(checkNeverCacheUrls, e.request.url) && e.request.method === 'GET') {
-					cache.put(e.request, response.clone());
-				}
-				return response;
+	if (e.request.mode === 'navigate' && !navigator.onLine) {
+		e.respondWith(caches.match(e.request).then((response) => {
+			return response || fetch(e.request).then(async (response) => {
+				return caches.open(cacheStorageName).then((cache) => {
+					if (neverCacheUrls.every(checkNeverCacheUrls, e.request.url) && e.request.method === 'GET') {
+						cache.put(e.request, response.clone());
+					}
+					return response;
+				});
 			});
-		});
-	}).catch(() => {
-		return caches.match(offlinePage);
-	}));
+		}).catch(() => {
+			return caches.match(offlinePage);
+		}));
+	}
 });
 
 // Push
@@ -112,6 +114,13 @@ function checkNeverCacheUrls(url) {
 
 // Fetch Rules
 function checkFetchRules(e) {
+
+	// Check request url from inside domain.
+	if (new URL(e.request.url).origin !== location.origin) {
+		if (e.request.url != fontUrl){
+			return;
+		}
+	}
 
 	// Check request url http or https
 	if (!e.request.url.match(/^(http|https):\/\//i)) return;
