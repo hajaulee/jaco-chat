@@ -3,7 +3,7 @@ var indexPage = 'index.html';
 var offlinePage = 'offline.html';
 var fontUrl = 'https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf/HoufRegularScript-Light.ttf';
 var cacheUrls = [offlinePage, fontUrl];
-var neverCacheUrls = [/\/index.html/];
+var neverCacheUrls = [/\/index.html/, /\/ws.js/];
 
 // Mở hoặc tạo cơ sở dữ liệu
 const request = indexedDB.open('SwDatabase', 1);
@@ -81,7 +81,7 @@ self.addEventListener('push', async (e) => {
 	const tabActive = await getData('PAGE_ACTIVE');
 	if (!tabActive && e.data) {
 		const payload = e.data.json();
-		const notificationTitle = payload.notification.title + ' ' + status;
+		const notificationTitle = payload.notification.title;
 		const notificationOptions = {
 			body: payload.notification.body,
 			icon: 'img/fav-72.png'
