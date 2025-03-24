@@ -3,7 +3,7 @@ var indexPage = 'index.html';
 var offlinePage = 'offline.html';
 var fontUrl = 'https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf/HoufRegularScript-Light.ttf';
 var cacheUrls = [offlinePage, fontUrl];
-var neverCacheUrls = [/\/index.html/, /\/ws.js/];
+var neverCacheUrls = [/\/index.html/, /\/sw.js/];
 
 // Mở hoặc tạo cơ sở dữ liệu
 const request = indexedDB.open('SwDatabase', 1);
