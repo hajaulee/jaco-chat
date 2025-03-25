@@ -308,7 +308,7 @@
         <div class="header">
             <div>
                 <div>Jaco Chat</div>
-                <div class="version-info">v1.0.8</div>
+                <div class="version-info">v1.0.9</div>
             </div>
         </div>
         <div class="messages" id="messages"></div>
@@ -375,6 +375,7 @@
         const messaging = firebase.messaging();
         const messagesRef = database.ref("messages");
         const fcmTokenRef = database.ref("fcmTokens");
+        const appsScriptKeyRef = database.ref("appsScriptKeys");
 
         // Các phần tử trên giao diện
         const loadingDiv = document.getElementById("loading");
@@ -395,6 +396,7 @@
         let lastMessageKey = null;
         let isNewLoginSession = false;
         let fcmCurrentToken = 'no_token';
+        let appsScriptKey = null;
 
         function displayMessage(message, append = true) {
             if (existingKeys[message.key]) {
@@ -487,6 +489,11 @@
                 console.log("Đăng nhập thành công:", user);
                 fcmTokenRef.child(encodeQueryPath(auth.currentUser?.email ?? 'nouser')).child(fcmCurrentToken).set(true);
 
+                // Get apps script key
+                appsScriptKeyRef.child("fcm").once('value', snapshot => {
+                    appsScriptKey = snapshot.val();
+                })
+
                 // Xóa tin nhắn cũ
                 messagesDiv.innerHTML = "";
                 existingKeys = {};
@@ -556,7 +563,7 @@
                     // Xóa token trùng lặp
                     tokens = [...new Set(tokens)];
                     
-                    fetch('https://script.google.com/macros/s/AKfycbwxHMV3F4-DBUf4nb-yVmrcBiwVy5tWqs0eckxaY_9KnhwFZHs9l-3f6x7cdNunPF1TUA/exec', {
+                    fetch('https://script.google.com/macros/s/AKfycbzB3XbajcpglMm9qNd94XYteuWC49st_ydCysu-shWG_jrgbDHHaVe4D3R63LA_mL7Y/exec', {
                         method: 'POST',
                         mode: "no-cors",
                         referrerPolicy: "strict-origin-when-cross-origin",
@@ -566,6 +573,7 @@
                             'Accept': 'application/json',
                         },
                         body: JSON.stringify({
+                            appsScriptKey: appsScriptKey,
                             tokens: tokens,
                             notification: {
                                 title: "Từ: " + user,
@@ -573,6 +581,10 @@
                                 click_action: window.location.href,
                             },
                         }),
+                    })
+                    .then(res => res.text())
+                    .then((data) => {
+                        console.log(data);
                     });
                 });
             }
