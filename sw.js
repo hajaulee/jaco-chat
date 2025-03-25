@@ -1,20 +1,9 @@
-var cacheStorageName = 'JacoChat';
+var cacheStorageName = 'JacoChat-v1.0.10';
 var indexPage = 'index.html';
 var offlinePage = 'offline.html';
 var fontUrl = 'https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf/HoufRegularScript-Light.ttf';
 var cacheUrls = [offlinePage, fontUrl];
 var neverCacheUrls = [/\/index.html/, /\/sw.js/];
-
-// Mở hoặc tạo cơ sở dữ liệu
-const request = indexedDB.open('SwDatabase', 1);
-
-// Tạo object store nếu cơ sở dữ liệu chưa tồn tại
-request.onupgradeneeded = function (event) {
-	const db = event.target.result;
-	if (!db.objectStoreNames.contains('SwStore')) {
-		db.createObjectStore('SwStore');
-	}
-};
 
 // Install 
 self.addEventListener('install', (e) => {
@@ -133,27 +122,50 @@ function checkFetchRules(e) {
 	return true;
 }
 
+
+// Open IndexedDB database
+function openDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open("SwDatabase", 1);
+
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            
+            // Create object stores for different types of data
+            if (!db.objectStoreNames.contains('SwStore')) {
+                db.createObjectStore('SwStore');
+            }
+        };
+
+        request.onsuccess = (event) => resolve(event.target.result);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
 // Lưu dữ liệu vào cơ sở dữ liệu
-function saveData(key, value) {
-	const db = request.result;
-	const transaction = db.transaction('SwStore', 'readwrite');
-	const store = transaction.objectStore('SwStore');
-	store.put(value, key);
+async function saveData(key, value) {
+	const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+        
+		const transaction = db.transaction('SwStore', 'readwrite');
+		const store = transaction.objectStore('SwStore');
+		store.put(value, key);
+
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+    });
 }
 
 // Lấy dữ liệu từ cơ sở dữ liệu
-function getData(key) {
-	const db = request.result;
-	const transaction = db.transaction('SwStore', 'readonly');
-	const store = transaction.objectStore('SwStore');
-
+async function getData(key) {
+	const db = await openDatabase();
+	
 	return new Promise((resolve, reject) => {
-		const getRes = store.get(key);
-		getRes.onsuccess = function () {
-			resolve(getRes.result);
-		};
-		getRes.onerror = function () {
-			reject(getRes.error);
-		};
+		const transaction = db.transaction('SwStore', 'readonly');
+		const store = transaction.objectStore('SwStore');
+		const request = store.get(key);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
 	})
 }
