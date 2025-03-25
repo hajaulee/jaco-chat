@@ -372,7 +372,6 @@
 
         const auth = firebase.auth();
         const database = firebase.database();
-        const messaging = firebase.messaging();
         const messagesRef = database.ref("messages");
         const fcmTokenRef = database.ref("fcmTokens");
         const appsScriptKeyRef = database.ref("appsScriptKeys");
@@ -623,6 +622,7 @@
         observer.observe(jacoKeyboard, { attributes: true, attributeFilter: ['style'] });
     </script>
     <script>
+        const messaging = firebase.messaging();
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
