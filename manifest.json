@@ -23,5 +23,6 @@
     "url": "index.html",
     "scope": ".",
     "lang": "vi-VN",
-    "dir": "rtl"
+    "dir": "rtl",
+    "content_security_policy": "default-src 'self' https://*.firebaseio.com https://*.googleapis.com; script-src 'self' https://apis.google.com; object-src 'self'"
 }
