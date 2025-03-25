@@ -308,7 +308,7 @@
         <div class="header">
             <div>
                 <div>Jaco Chat</div>
-                <div class="version-info">v1.0.10</div>
+                <div class="version-info">v1.0.11</div>
             </div>
         </div>
         <div class="messages" id="messages"></div>
@@ -322,7 +322,7 @@
     <script src="https://hajaulee.github.io/jaco/experience/keyboard.js"></script>
     <script>
         // Notification prompting can only be done in response to a user gesture
-        if (Notification.permission === 'default') {
+        if (window.Notification && Notification.permission === 'default') {
             document.addEventListener('click', () => {
                 Notification.requestPermission().then((permission) => {
                     if (permission === 'granted') {
