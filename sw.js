@@ -1,4 +1,4 @@
-var cacheStorageName = 'JacoChat-v1.0.10';
+var cacheStorageName = 'JacoChat-v1.0.11';
 var indexPage = 'index.html';
 var offlinePage = 'offline.html';
 var fontUrl = 'https://hajaulee.github.io/Houf-Jaco-Regular-Script/new_fonts/ttf/HoufRegularScript-Light.ttf';
@@ -149,7 +149,7 @@ async function saveData(key, value) {
         
 		const transaction = db.transaction('SwStore', 'readwrite');
 		const store = transaction.objectStore('SwStore');
-		store.put(value, key);
+		const request = store.put(value, key);
 
 		request.onsuccess = () => resolve(request.result);
 		request.onerror = () => reject(request.error);
